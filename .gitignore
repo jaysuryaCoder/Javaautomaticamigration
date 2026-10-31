@@ -1,0 +1,7 @@
+target/
+work/
+services.yml
+*.iml
+.idea/
+.vscode/
+.env

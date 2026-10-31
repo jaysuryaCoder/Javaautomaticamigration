@@ -1,0 +1,35 @@
+# Copy to services.yml and edit. Loaded automatically (spring.config.import in application.yml).
+#
+# dependsOn: shared libraries / BOMs / parent POMs that must be migrated FIRST. Services in the same wave run in
+# parallel; a service whose dependency fails is skipped rather than built against a broken parent.
+# subDir:    only for monorepos, the folder inside the repo that holds the service.
+# buildTool: AUTO (default, detects pom.xml / build.gradle), MAVEN or GRADLE.
+migration:
+  services:
+    - name: platform-bom
+      repoUrl: https://github.com/YOUR_ORG/platform-bom.git
+
+    - name: common-lib
+      repoUrl: https://github.com/YOUR_ORG/common-lib.git
+      dependsOn: [platform-bom]
+
+    - name: auth-service
+      repoUrl: https://github.com/YOUR_ORG/auth-service.git
+      dependsOn: [common-lib]
+
+    - name: orders-service
+      repoUrl: https://github.com/YOUR_ORG/orders-service.git
+      dependsOn: [common-lib]
+
+    - name: payments-service
+      repoUrl: git@github.com:YOUR_ORG/payments-service.git
+      branch: develop
+      dependsOn: [common-lib]
+
+    - name: inventory-service
+      repoUrl: https://github.com/YOUR_ORG/monorepo.git
+      subDir: services/inventory
+      buildTool: GRADLE
+      dependsOn: [common-lib]
+
+    # ... add the remaining services (up to 30 or more) in the same shape.
