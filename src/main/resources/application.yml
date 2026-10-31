@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: java-migration-agent
+  threads:
+    virtual:
+      enabled: true
+  config:
+    # Your fleet definition lives in ./services.yml (copy services.example.yml). It is optional so the app
+    # still starts, in SIMULATE mode, with a built-in demo fleet of 30 services.
+    import: optional:file:./services.yml
+
+server:
+  port: 8080
+  # Loopback by default: this service can clone, build and push. Set BIND_ADDRESS=0.0.0.0 only together with
+  # MIGRATION_API_TOKEN.
+  address: ${BIND_ADDRESS:127.0.0.1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+migration:
+  # SIMULATE = fake git/build/LLM, safe demo. REAL = clone, build on JDK 25, call the LLM, push branches, open PRs.
+  mode: ${MIGRATION_MODE:SIMULATE}
+  work-root: ${MIGRATION_WORK_ROOT:./work}
+  # Home of a JDK 25 installation. Every migrated service is built and tested with THIS JDK.
+  jdk-home: ${JDK25_HOME:}
+  target-java: "25"
+  api-token: ${MIGRATION_API_TOKEN:}
+
+  # Parallelism. Each running build is a Maven/Gradle JVM (~1-1.5 GB), so size this to your machine's RAM/cores.
+  max-parallel: 15
+  max-repair-attempts: 3
+  build-timeout-minutes: 8
+  rewrite-timeout-minutes: 5
+  skip-tests: false
+  maven-opts: -Xmx1g
+
+  # Deterministic pass that runs before any LLM call.
+  use-open-rewrite: true
+  rewrite-recipe: org.openrewrite.java.migrate.UpgradeToJava25
+  rewrite-plugin-version: 6.53.0
+  rewrite-recipe-coordinates: org.openrewrite.recipe:rewrite-migrate-java:RELEASE
+
+  # Git / PR behaviour. Nothing is ever merged automatically.
+  branch-name: migrate/java-25
+  push: true
+  open-pull-request: true
+
+  # SIMULATE mode only. 1.0 is roughly 3-5 seconds per service, 0 is instant.
+  simulation-speed: 1.0
+
+  llm:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: claude-sonnet-5-5
+    max-tokens: 8000
+    concurrency: 8
